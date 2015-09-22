@@ -30,10 +30,6 @@ input[type="radio"]
   -webkit-appearance: radio
   min-height: inherit
 
-input[type="checkbox"]
-  -webkit-appearance: checkbox
-  margin-right: 4px
-
 input[type="text"],
 input[type="password"],
 input[type="email"]
@@ -49,6 +45,9 @@ input[type="email"]
     min-height: 0
     height: 18px
     width: 200px
+
+  &.full-line
+    width: 100%
 
 input[type="email"]:invalid
   box-shadow: none
@@ -96,6 +95,11 @@ textarea
   resize: vertical
   width: 100%
 
+  &.editor
+    resize: none
+    padding-bottom: 22px
+
+
 .button
   border-radius: 3px
   text-decoration: none
@@ -106,7 +110,6 @@ button
   background: #cfcfcf
   background: linear-gradient(#cfcfcf, #c2c2c2)
   border: none
-  box-shadow: 0 1px 0 #8c8c8c
   cursor: pointer
   display: inline-block
   font-weight: 700
@@ -160,6 +163,9 @@ button
       box-shadow: 0 1px 0 #4d4d4d
       color: #fff
 
+  i.fa
+    margin-right: 10px
+
 input[type="submit"].disabled,
 input[type="submit"]:disabled,
 input[type="button"].disabled,
@@ -181,10 +187,6 @@ fieldset
 
 input[type="hidden"]
   display: none
-
-input[type="checkbox"],
-input[type="radio"]
-  display: inline
 
 .radio-div,
 .check-div
@@ -229,26 +231,39 @@ textarea
     padding-top: 5px
     padding-bottom: 5px
 
-  i.fa.fa-times
-    font-size: 20px
+  .fa-times-thin
+    font-size: 26px
+    margin: 3px 4px
 
-  .option
-    border-color: transparent
-    border-radius: 3px
-    color: #8c8c8c
-    display: block
-    float: right
-    height: 30px
-    line-height: 30px
-    padding: 0 8px
-    margin: 0 2px
+// Material Design checkboxes
+[type="checkbox"]:not(:checked),
+[type="checkbox"]:checked
+  position: absolute
+  left: -9999px
+  visibility: hidden
 
-    &:hover
-      background-color: #dbdbdb
-      color: #4d4d4d
+.materialCheckBox
+  position: relative
+  width: 13px
+  height: @width
+  z-index: 0
+  border: 2px solid #5a5a5a
+  border-radius: 1px
+  transition: .2s
+  margin: 0
+  cursor: pointer
 
-    &:active
-      background-color: #ccc
+  &.is-checked
+    top: -4px
+    left: -3px
+    width: 7px
+    height: 15px
+    margin-right: 6px
+    border-top: 2px solid transparent
+    border-left: 2px solid transparent
+    transform: rotate(40deg)
+    -webkit-backface-visibility: hidden
+    transform-origin: 100% 100%
 
 .button-link
   background: #fff
@@ -372,9 +387,6 @@ textarea
       background-color: rgba(255, 255, 255, .3)
       border-color: transparent
 
-    .icon-sm
-      color: #fff
-
   &:active
     background: #2e85b8
     background: linear-gradient(#2e85b8, #28739f)
@@ -418,7 +430,6 @@ textarea
       border-color: #8b0e0e
 
 button
-
   &.quiet-button,
   &.loud-text-button
     background: none
@@ -455,11 +466,6 @@ button
   &.w-img
     padding-left: 28px
 
-  .icon-sm
-    left: 6px
-    position: absolute
-    top: 6px
-
   &:hover
     color: #4d4d4d
     background: #dcdcdc
@@ -482,6 +488,9 @@ button
   &:active
     color: #53492d
     background: #e1cc93
+
+.is-editable
+  cursor: pointer
 
 .big-link
   border-radius: 3px
@@ -592,29 +601,8 @@ button
     border-color: #2e85b8
     color: #fff
 
-.form-grid
-  display: flex
-  flex-wrap: wrap
-  width: 100%
-
-.form-grid-child
-  flex: 1
-  margin: 0 0 8px
-
-.form-grid-child-full
-  flex: 1 1 100%
-
-.form-grid-child-threequarters
-  flex: 3
-  margin-right: 8px
-
-.form-grid-child-twothirds
-  flex: 2
-  margin-right: 8px
-
 .dropdown-menu
   border-radius: 2px
-  // padding-bottom: 3px
   overflow: hidden
 
   li

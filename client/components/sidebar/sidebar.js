@@ -1,55 +1,269 @@
+Sidebar = null;
+
+const defaultView = 'home';
+
+const viewTitles = {
+  filter: 'filter-cards',
+  multiselection: 'multi-selection',
+  archives: 'archives',
+};
+
 BlazeComponent.extendComponent({
-  template: function() {
-    return 'boardSidebar';
+  template() {
+    return 'sidebar';
   },
 
-  mixins: function() {
-    return [Mixins.InfiniteScrolling];
+  mixins() {
+    return [Mixins.InfiniteScrolling, Mixins.PerfectScrollbar];
   },
 
-  onCreated: function() {
-    this._isOpen = new ReactiveVar(true);
+  onCreated() {
+    this._isOpen = new ReactiveVar(!Session.get('currentCard'));
+    this._view = new ReactiveVar(defaultView);
+    Sidebar = this;
   },
 
-  isOpen: function() {
+  onDestroyed() {
+    Sidebar = null;
+  },
+
+  isOpen() {
     return this._isOpen.get();
   },
 
-  open: function() {
-    if (! this._isOpen.get()) {
+  open() {
+    if (!this._isOpen.get()) {
       this._isOpen.set(true);
+      EscapeActions.executeUpTo('detailsPane');
     }
   },
 
-  hide: function() {
+  hide() {
     if (this._isOpen.get()) {
       this._isOpen.set(false);
     }
   },
 
-  toogle: function() {
-    this._isOpen.set(! this._isOpen.get());
+  toggle() {
+    this._isOpen.set(!this._isOpen.get());
   },
 
-  calculateNextPeak: function() {
-    var altitude = this.find('.js-board-sidebar-content').scrollHeight;
+  calculateNextPeak() {
+    const altitude = this.find('.js-board-sidebar-content').scrollHeight;
     this.callFirstWith(this, 'setNextPeak', altitude);
   },
 
-  reachNextPeak: function() {
-    var activitiesComponent = this.componentChildren('activities')[0];
+  reachNextPeak() {
+    const activitiesComponent = this.componentChildren('activities')[0];
     activitiesComponent.loadNextPage();
   },
 
-  isTongueHidden: function() {
-    return this.isOpen() && Filter.isActive();
+  isTongueHidden() {
+    return this.isOpen() && this.getView() !== defaultView;
   },
 
-  events: function() {
+  scrollTop() {
+    this.$('.js-board-sidebar-content').scrollTop(0);
+  },
+
+  getView() {
+    return this._view.get();
+  },
+
+  setView(view) {
+    view = _.isString(view) ? view : defaultView;
+    if (this._view.get() !== view) {
+      this._view.set(view);
+      this.scrollTop();
+      EscapeActions.executeUpTo('detailsPane');
+    }
+    this.open();
+  },
+
+  isDefaultView() {
+    return this.getView() === defaultView;
+  },
+
+  getViewTemplate() {
+    return `${this.getView()}Sidebar`;
+  },
+
+  getViewTitle() {
+    return TAPi18n.__(viewTitles[this.getView()]);
+  },
+
+  events() {
     // XXX Hacky, we need some kind of `super`
-    var mixinEvents = this.getMixin(Mixins.InfiniteScrolling).events();
+    const mixinEvents = this.getMixin(Mixins.InfiniteScrolling).events();
     return mixinEvents.concat([{
-      'click .js-toogle-sidebar': this.toogle
+      'click .js-toggle-sidebar': this.toggle,
+      'click .js-back-home': this.setView,
     }]);
+  },
+}).register('sidebar');
+
+Blaze.registerHelper('Sidebar', () => Sidebar);
+
+EscapeActions.register('sidebarView',
+  () => { Sidebar.setView(defaultView); },
+  () => { return Sidebar && Sidebar.getView() !== defaultView; }
+);
+
+function getMemberIndex(board, searchId) {
+  for (let i = 0; i < board.members.length; i++) {
+    if (board.members[i].userId === searchId)
+      return i;
   }
-}).register('boardSidebar');
+  throw new Meteor.Error('Member not found');
+}
+
+Template.memberPopup.helpers({
+  user() {
+    return Users.findOne(this.userId);
+  },
+  memberType() {
+    const type = Users.findOne(this.userId).isBoardAdmin() ? 'admin' : 'normal';
+    return TAPi18n.__(type).toLowerCase();
+  },
+});
+
+Template.memberPopup.events({
+  'click .js-filter-member'() {
+    Filter.members.toggle(this.userId);
+    Popup.close();
+  },
+  'click .js-change-role': Popup.open('changePermissions'),
+  'click .js-remove-member': Popup.afterConfirm('removeMember', function() {
+    const currentBoard = Boards.findOne(Session.get('currentBoard'));
+    const memberIndex = getMemberIndex(currentBoard, this.userId);
+
+    Boards.update(currentBoard._id, {
+      $set: {
+        [`members.${memberIndex}.isActive`]: false,
+      },
+    });
+    Popup.close();
+  }),
+  'click .js-leave-member'() {
+    // XXX Not implemented
+    Popup.close();
+  },
+});
+
+Template.membersWidget.events({
+  'click .js-member': Popup.open('member'),
+  'click .js-manage-board-members': Popup.open('addMember'),
+});
+
+Template.labelsWidget.events({
+  'click .js-label': Popup.open('editLabel'),
+  'click .js-add-label': Popup.open('createLabel'),
+});
+
+// Board members can assign people or labels by drag-dropping elements from the
+// sidebar to the cards on the board. In order to re-initialize the jquery-ui
+// plugin any time a draggable member or label is modified or removed we use a
+// autorun function and register a dependency on the both members and labels
+// fields of the current board document.
+function draggableMembersLabelsWidgets() {
+  if (!Meteor.user() || !Meteor.user().isBoardMember())
+    return;
+
+  this.autorun(() => {
+    const currentBoardId = Tracker.nonreactive(() => {
+      return Session.get('currentBoard');
+    });
+    Boards.findOne(currentBoardId, {
+      fields: {
+        members: 1,
+        labels: 1,
+      },
+    });
+    Tracker.afterFlush(() => {
+      this.$('.js-member,.js-label').draggable({
+        appendTo: 'body',
+        helper: 'clone',
+        revert: 'invalid',
+        revertDuration: 150,
+        snap: false,
+        snapMode: 'both',
+        start() {
+          EscapeActions.executeUpTo('popup-back');
+        },
+      });
+    });
+  });
+}
+
+Template.membersWidget.onRendered(draggableMembersLabelsWidgets);
+Template.labelsWidget.onRendered(draggableMembersLabelsWidgets);
+
+Template.addMemberPopup.helpers({
+  isBoardMember() {
+    const user = Users.findOne(this._id);
+    return user && user.isBoardMember();
+  },
+});
+
+Template.addMemberPopup.events({
+  'click .js-select-member'() {
+    const userId = this._id;
+    const currentBoard = Boards.findOne(Session.get('currentBoard'));
+    const currentMembersIds = _.pluck(currentBoard.members, 'userId');
+    if (currentMembersIds.indexOf(userId) === -1) {
+      Boards.update(currentBoard._id, {
+        $push: {
+          members: {
+            userId,
+            isAdmin: false,
+            isActive: true,
+          },
+        },
+      });
+    } else {
+      const memberIndex = getMemberIndex(currentBoard, userId);
+
+      Boards.update(currentBoard._id, {
+        $set: {
+          [`members.${memberIndex}.isActive`]: true,
+        },
+      });
+    }
+    Popup.close();
+  },
+});
+
+Template.addMemberPopup.onRendered(function() {
+  this.find('.js-search-member input').focus();
+});
+
+Template.changePermissionsPopup.events({
+  'click .js-set-admin, click .js-set-normal'(event) {
+    const currentBoard = Boards.findOne(Session.get('currentBoard'));
+    const memberIndex = getMemberIndex(currentBoard, this.userId);
+    const isAdmin = $(event.currentTarget).hasClass('js-set-admin');
+
+    Boards.update(currentBoard._id, {
+      $set: {
+        [`members.${memberIndex}.isAdmin`]: isAdmin,
+      },
+    });
+    Popup.back(1);
+  },
+});
+
+Template.changePermissionsPopup.helpers({
+  isAdmin() {
+    const user = Users.findOne(this.userId);
+    return user.isBoardAdmin();
+  },
+
+  isLastAdmin() {
+    const user = Users.findOne(this.userId);
+    if (!user.isBoardAdmin())
+      return false;
+    const currentBoard = Boards.findOne(Session.get('currentBoard'));
+    const nbAdmins = _.where(currentBoard.members, { isAdmin: true }).length;
+    return nbAdmins === 1;
+  },
+});

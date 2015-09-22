@@ -1,96 +1,70 @@
 Utils = {
-  error: function(err) {
-    Session.set('error', (err && err.message || false));
-  },
-
-  // scroll
-  Scroll: function(selector) {
-    var $el = $(selector);
-    return {
-      top: function(px, add) {
-        var t = $el.scrollTop();
-        $el.animate({ scrollTop: (add ? (t + px) : px) });
-      },
-      left: function(px, add) {
-        var l = $el.scrollLeft();
-        $el.animate({ scrollLeft: (add ? (l + px) : px) });
-      }
-    };
-  },
-
-  Warning: {
-    get: function() {
-      return Session.get('warning');
-    },
-    open: function(desc) {
-      Session.set('warning', { desc: desc });
-    },
-    close: function() {
-      Session.set('warning', false);
-    }
-  },
-
   // XXX We should remove these two methods
-  goBoardId: function(_id) {
-    var board = Boards.findOne(_id);
-    return board && Router.go('Board', {
-      _id: board._id,
-      slug: board.slug
+  goBoardId(_id) {
+    const board = Boards.findOne(_id);
+    return board && FlowRouter.go('board', {
+      id: board._id,
+      slug: board.slug,
     });
   },
 
-  goCardId: function(_id) {
-    var card = Cards.findOne(_id);
-    var board = Boards.findOne(card.boardId);
-    return board && Router.go('Card', {
+  goCardId(_id) {
+    const card = Cards.findOne(_id);
+    const board = Boards.findOne(card.boardId);
+    return board && FlowRouter.go('card', {
       cardId: card._id,
       boardId: board._id,
-      slug: board.slug
+      slug: board.slug,
     });
   },
 
-  liveEvent: function(events, callback) {
-    $(document).on(events, function() {
-      callback($(this));
-    });
-  },
-
-  capitalize: function(string) {
+  capitalize(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   },
 
-  getLabelIndex: function(boardId, labelId) {
-    var board = Boards.findOne(boardId);
-    var labels = {};
-    _.each(board.labels, function(a, b) {
+  getLabelIndex(boardId, labelId) {
+    const board = Boards.findOne(boardId);
+    const labels = {};
+    _.each(board.labels, (a, b) => {
       labels[a._id] = b;
     });
     return {
       index: labels[labelId],
-      key: function(key) {
-        return 'labels.' + labels[labelId] + '.' + key;
-      }
+      key(key) {
+        return `labels.${labels[labelId]}.${key}`;
+      },
     };
   },
 
   // Determine the new sort index
-  getSortIndex: function(prevCardDomElement, nextCardDomElement) {
+  calculateIndex(prevCardDomElement, nextCardDomElement, nCards = 1) {
+    let base, increment;
     // If we drop the card to an empty column
-    if (! prevCardDomElement && ! nextCardDomElement) {
-      return 0;
+    if (!prevCardDomElement && !nextCardDomElement) {
+      base = 0;
+      increment = 1;
     // If we drop the card in the first position
-    } else if (! prevCardDomElement) {
-      return Blaze.getData(nextCardDomElement).sort - 1;
+    } else if (!prevCardDomElement) {
+      base = Blaze.getData(nextCardDomElement).sort - 1;
+      increment = -1;
     // If we drop the card in the last position
-    } else if (! nextCardDomElement) {
-      return Blaze.getData(prevCardDomElement).sort + 1;
+    } else if (!nextCardDomElement) {
+      base = Blaze.getData(prevCardDomElement).sort + 1;
+      increment = 1;
     }
     // In the general case take the average of the previous and next element
     // sort indexes.
     else {
-      var prevSortIndex = Blaze.getData(prevCardDomElement).sort;
-      var nextSortIndex = Blaze.getData(nextCardDomElement).sort;
-      return (prevSortIndex + nextSortIndex) / 2;
+      const prevSortIndex = Blaze.getData(prevCardDomElement).sort;
+      const nextSortIndex = Blaze.getData(nextCardDomElement).sort;
+      increment = (nextSortIndex - prevSortIndex) / (nCards + 1);
+      base = prevSortIndex + increment;
     }
-  }
+    // XXX Return a generator that yield values instead of a base with a
+    // increment number.
+    return {
+      base,
+      increment,
+    };
+  },
 };

@@ -2,21 +2,23 @@
 #
 # 'meteor add' and 'meteor remove' will edit this file for you,
 # but you can also edit it by hand.
+#
+# XXX Should we replace tmeasday:presence by 3stack:presence? Or maybe the
+# packages will merge in the future?
 
-meteor-platform
+meteor-base
 
-# Account system
-accounts-password
-kenton:accounts-sandstorm
-service-configuration
-useraccounts:core
-useraccounts:unstyled
-
-# Compilers
+# Build system
+ecmascript
+standard-minifiers
 mquandalle:jade
 mquandalle:stylus
 
+# Polyfills
+es5-shim
+
 # Collections
+mongo
 aldeed:collection2
 cfs:gridfs
 cfs:standard-packages
@@ -26,28 +28,47 @@ matb33:collection-hooks
 matteodem:easy-search
 reywood:publish-composite
 
+# Account system
+accounts-password
+kenton:accounts-sandstorm
+service-configuration
+useraccounts:core
+useraccounts:unstyled
+useraccounts:flow-routing
+
 # Utilities
+check
+jquery
+random
+reactive-dict
+session
+tracker
+underscore
+3stack:presence
 alethes:pages
+arillo:flow-router-helpers
 audit-argument-checks
-iron:router
+kadira:blaze-layout
+kadira:flow-router
+meteorhacks:picker
 meteorhacks:subs-manager
 mquandalle:autofocus
 mquandalle:moment
 ongoworks:speakingurl
 raix:handlebar-helpers
-random
-reactive-dict
 tap:i18n
-tmeasday:presence
-underscore
 
 # UI components
-bengott:avatar
+blaze
+reactive-var
 fortawesome:fontawesome
-linto:jquery-ui
-markdown
 mousetrap:mousetrap
 mquandalle:jquery-textcomplete
+mquandalle:jquery-ui-drag-drop-sort
+mquandalle:mousetrap-bindglobal
+mquandalle:perfect-scrollbar
 peerlibrary:blaze-components
-reactive-var
+perak:markdown
 seriousm:emoji-continued
+templates:tabs
+verron:autosize

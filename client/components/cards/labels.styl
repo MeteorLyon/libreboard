@@ -2,22 +2,46 @@
 
 // XXX Use .board-widget-labels as a flexbox container
 .card-label
-  background-color: #b3b3b3
   border-radius: 4px
   color: white
   display: inline-block
   font-weight: 700
   font-size: 13px
   margin-right: 4px
+  margin-bottom: 5px
   padding: 3px 8px
-  position:relative
   max-width: 100%
   min-width: 8px
   overflow: ellipsis
   height: 18px
+  vertical-align: bottom
 
   &:hover
     color: white
+
+  &.square
+    height: 30px
+    width: @height
+    padding: 0
+
+  &.add-label
+    box-shadow: 0 0 0 2px darken(white, 25%) inset
+
+    &:hover, &.is-active
+      box-shadow: 0 0 0 2px darken(white, 60%) inset
+
+    i.fa-plus
+      margin-top: 3px
+
+.palette-colors
+  display: flex
+  flex-wrap: wrap
+
+  .palette-color
+    flex-grow: 1
+    display: flex
+    align-items: center
+    justify-content: center
 
 .card-label-green
   background-color: #3cb500
@@ -79,35 +103,6 @@
     left: 0
     width: 260px
 
-.minicard-labels
-  position: relative
-  z-index: 30
-  top: -6px
-
-  .card-label
-    border-radius: 0
-    float: left
-    height: 4px
-    margin-bottom: 1px
-    padding: 0
-    width: 40px
-    line-height: 100px
-
-.card-detail-item-labels .card-label
-  border-radius: 3px
-  display: block
-  float: left
-  height: 20px
-  line-height: 20px
-  margin: 0 4px 4px 0
-  min-width: 30px
-  padding: 5px 10px
-  width: auto
-
-.editable-labels .card-label:hover
-  cursor: pointer
-  opacity: .75
-
 .edit-labels-pop-over
   margin-bottom: 8px
 
@@ -117,7 +112,9 @@
 .card-label-selectable
   border-radius: 3px
   cursor: pointer
-  margin: 0 50px 4px 0
+  margin: 0
+  margin-bottom: 3px
+  width: 190px
   min-height: 18px
   padding: 8px
   position: relative
@@ -132,21 +129,13 @@
   &.active,
   &.active.selected:hover,
   &.active.selected
-    margin-right: 38px
     padding-right: 32px
 
     .card-label-selectable-icon
       right: 6px
 
-  &.active:hover:hover,
-  &.active:hover,
-  &.active.selected:hover:hover,
-  &.active.selected:hover
-    margin-right: 38px
-
   &.selected,
   &:hover
-    margin-right: 38px
     opacity: .8
 
 .active .card-label-selectable
@@ -165,19 +154,3 @@
   &:hover
     background: #dbdbdb
 
-.card-label-color-select-icon
-  left: 14px
-  position: absolute
-  top: 9px
-
-.phenom .card-label
-  display: inline-block
-  font-size: 12px
-  height: 14px
-  line-height: 13px
-  padding: 0 4px
-  min-width: 16px
-  overflow: ellipsis
-
-.board-widget .phenom .card-label
-  max-width: 130px
